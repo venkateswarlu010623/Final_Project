@@ -71,12 +71,12 @@ public class PlanMyTripService {
     //2.Retrieve hotels based on Room Type, sharing, location and sort based on price [Hotels should not be retrieved if no vacancy]
 
     public List<Hotel> findHotelsByRoomTypeAndSharingAndLocation(HotelGetRequest hotelGetRequest) {
-        List<Hotel> savedHotels = hotelRepository.findAll();
+        List<Hotel> savedHotels = hotelRepository.findByLocation(hotelGetRequest.getLocation());
 
         if (!savedHotels.isEmpty())
         {
             return savedHotels.stream()
-                    .filter(hotel -> hotel.getLocation().equalsIgnoreCase(hotelGetRequest.getLocation()) && !hotel.getRooms().isEmpty())
+                    .filter(hotel ->!hotel.getRooms().isEmpty())
                     .map(hotel -> {
                         List<Room> savedRooms = hotel.getRooms().stream()
                                 .filter(room -> room.getSharing().equalsIgnoreCase(hotelGetRequest.getSharing()) &&
@@ -101,9 +101,7 @@ public class PlanMyTripService {
         }
         else
         {
-            throw new HotelListNotFoundException("Hotel list not found with " + hotelGetRequest.getSharing() +
-                    " sharing, " + hotelGetRequest.getRoomType() + " room type in " + hotelGetRequest.getLocation() +
-                    " location");
+            throw new HotelListNotFoundException("Hotel list not found with "+hotelGetRequest.getLocation()+" location");
         }
     }
 

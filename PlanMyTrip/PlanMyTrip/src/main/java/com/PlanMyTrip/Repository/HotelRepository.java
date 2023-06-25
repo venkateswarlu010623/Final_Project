@@ -16,4 +16,5 @@ public interface HotelRepository extends JpaRepository<Hotel,Integer> {
 
     Optional<List<Hotel>> findByRoomsRoomTypeAndRoomsSharingAndLocation(String roomType, String sharing, String location);
 
+    List<Hotel> findByLocation(String location);
 }
