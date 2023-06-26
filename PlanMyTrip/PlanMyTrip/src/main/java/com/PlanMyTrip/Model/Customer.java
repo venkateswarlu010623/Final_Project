@@ -5,10 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Positive;
+import javax.transaction.Transactional;
+import javax.validation.constraints.*;
 import java.util.List;
 
 @Data
@@ -22,18 +20,18 @@ public class Customer {
     @Id
     private int customerId;
 
-//    @NotBlank(message = "customer name is required")
+    @NotBlank(message = "customer name is required")
     private String customerName;
 
     @NotBlank(message = "customer email is required")
     @Email(regexp = "^[A-Za-z0-9+_.-]+@cjsstechnologies\\.com$", message = "Invalid email format")
     private String customerEmail;
 
-    @Positive(message = "Coins balance must be a positive value")
+    @PositiveOrZero(message = "Coins balance must be a positive value")
     private double coinsBalance;
 
     @JsonManagedReference("customerReference")
-    @OneToMany(mappedBy = "customer",cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
 
 }

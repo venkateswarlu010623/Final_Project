@@ -1,10 +1,14 @@
 package com.PlanMyTrip.Controller;
 
 
+import com.PlanMyTrip.ExceptionHandling.BookingListNotFoundException;
+import com.PlanMyTrip.ExceptionHandling.BookingNotCancelledException;
 import com.PlanMyTrip.Model.*;
 import com.PlanMyTrip.Service.PlanMyTripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.time.LocalDate;
@@ -18,16 +22,21 @@ public class PlanMyTripController {
 
 
     @PostMapping("/hotels/register")
-    public Hotel createHotel(@Valid @RequestBody Hotel hotel)
+    public ResponseEntity<Hotel> createHotel(@Valid @RequestBody Hotel hotel)
     {
-        return planMyTripService.saveHotel(hotel);
+        Hotel savedHotel = planMyTripService.saveHotel(hotel);
+
+        return new ResponseEntity<>(savedHotel, HttpStatus.CREATED);
     }
 
 
     @PostMapping("/hotel-rooms/register/hotelId-{hotelId}")
-    public Hotel createHotelRooms(@Valid @RequestBody List<Room> rooms, @PathVariable int hotelId)
+    public ResponseEntity<Hotel> createHotelRooms(@Valid @RequestBody List<Room> rooms, @PathVariable int hotelId)
     {
-        return planMyTripService.saveRooms(rooms,hotelId);
+
+        Hotel updatedHotel = planMyTripService.saveRooms(rooms,hotelId);
+
+        return new ResponseEntity<>(updatedHotel, HttpStatus.CREATED);
     }
 
 
@@ -39,43 +48,98 @@ public class PlanMyTripController {
 
 
     @PostMapping("/customer/register")
-    public Customer createCustomer(@Valid @RequestBody Customer customer)
+    public ResponseEntity<Customer> createCustomer(@Valid @RequestBody Customer customer)
     {
-        return planMyTripService.saveCustomer(customer);
+
+        Customer savedCustomer = planMyTripService.saveCustomer(customer);
+
+        return new ResponseEntity<>(savedCustomer, HttpStatus.CREATED);
     }
 
 
     @PostMapping("/hotels")
-    public List<Hotel> getHotelsByRoomTypeAndSharingAndLocation( @Valid @RequestBody HotelGetRequest hotelGetRequest)
+    public ResponseEntity<List<Hotel>> getHotelsByRoomTypeAndSharingAndLocation( @Valid @RequestBody HotelGetRequest hotelGetRequest)
     {
-        return planMyTripService.findHotelsByRoomTypeAndSharingAndLocation(hotelGetRequest);
+
+        List<Hotel> hotels = planMyTripService.findHotelsByRoomTypeAndSharingAndLocation(hotelGetRequest);
+
+        return new ResponseEntity<>(hotels, HttpStatus.FOUND);
     }
 
 
     @PostMapping("/customer/booking")
-    public CustomerBookingRequest addBooking(@Valid @RequestBody CustomerBookingRequest customerBookingRequest)
+    public ResponseEntity<CustomerBookingRequest> addBooking(@Valid @RequestBody CustomerBookingRequest customerBookingRequest)
     {
-        return planMyTripService.createCustomerBooking(customerBookingRequest);
+        CustomerBookingRequest updatedCustomer = planMyTripService.createCustomerBooking(customerBookingRequest);
+
+        return new ResponseEntity<>(updatedCustomer, HttpStatus.ACCEPTED);
     }
 
 
     @PutMapping("/update/room/status")
-    public List<Room> updateRoom()
+    public ResponseEntity<List<Room>> updateRoom()
     {
-        return planMyTripService.updateRoomStatus();
+        List<Room> updateRoomStatus =planMyTripService.updateRoomStatus();
+
+        return new ResponseEntity<>(updateRoomStatus, HttpStatus.ACCEPTED);
     }
 
 
     @GetMapping("/customer/bookings/{customerId}/{bookingDate}")
-    public List<String> getCustomerBookings(@PathVariable int customerId, @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate bookingDate)
+    public ResponseEntity<List<String>> getCustomerBookings(@PathVariable int customerId, @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate bookingDate)
     {
-        return planMyTripService.customerBookings(customerId,bookingDate);
+
+        List<String> customerBookings =planMyTripService.customerBookings(customerId,bookingDate);
+
+        return new ResponseEntity<>(customerBookings, HttpStatus.FOUND);
     }
 
 
     @GetMapping("/hotel/report/{hotelId}")
-    public List<String> findHotelReport(@PathVariable int hotelId)
+    public ResponseEntity<List<String>> findHotelReport(@PathVariable int hotelId)
     {
-        return planMyTripService.getHotelReport(hotelId);
+        List<String> hotelReport = planMyTripService.getHotelReport(hotelId);
+
+        return new ResponseEntity<>(hotelReport, HttpStatus.FOUND);
+    }
+
+
+    @PutMapping("/cancel/customer/booking/customerId-{customerId}/bookingId-{bookingId}")
+    public String removeCustomerBooking(@PathVariable int customerId,@PathVariable int bookingId)
+    {
+        return planMyTripService.cancelBooking(customerId,bookingId);
+    }
+
+
+    @GetMapping("/hotel/hotelId-{hotelId}")
+    public ResponseEntity<Hotel> findOneHotel(@PathVariable int hotelId)
+    {
+        Hotel hotel = planMyTripService.getOneHotel(hotelId);
+
+        return new ResponseEntity<>(hotel, HttpStatus.FOUND);
+    }
+
+    @GetMapping("/room/roomId-{roomId}")
+    public ResponseEntity<Room> findOneRoom(@PathVariable int roomId)
+    {
+        Room room = planMyTripService.getOneRoom(roomId);
+
+        return new ResponseEntity<>(room, HttpStatus.FOUND);
+    }
+
+    @GetMapping("/booking/bookingId-{bookingId}")
+    public ResponseEntity<Booking> findOneBooking(@PathVariable int bookingId)
+    {
+        Booking booking = planMyTripService.getOneBooking(bookingId);
+
+        return new ResponseEntity<>(booking,HttpStatus.FOUND);
+    }
+
+    @GetMapping("/customer/customerId-{customerId}")
+    public ResponseEntity<Customer> findOneCustomer(@PathVariable int customerId)
+    {
+        Customer customer = planMyTripService.getOneCustomer(customerId);
+
+        return new ResponseEntity<>(customer,HttpStatus.FOUND);
     }
 }

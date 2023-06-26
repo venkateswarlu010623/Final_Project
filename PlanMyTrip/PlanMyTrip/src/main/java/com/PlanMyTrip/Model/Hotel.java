@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
@@ -27,6 +28,6 @@ public class Hotel {
     private String location;
 
     @JsonManagedReference("hotelReference")
-    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL,mappedBy = "hotel")
+    @OneToMany( cascade = CascadeType.ALL, mappedBy = "hotel", orphanRemoval = true)
     private List<Room> rooms;
 }

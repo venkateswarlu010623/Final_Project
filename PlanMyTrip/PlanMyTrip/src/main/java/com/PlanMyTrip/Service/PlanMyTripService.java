@@ -9,7 +9,6 @@ import com.PlanMyTrip.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Synchronization;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -28,7 +27,6 @@ public class PlanMyTripService {
     @Autowired
     BookingRepository bookingRepository;
 
-
 //1.Register a Hotels and customers
 
     public Hotel saveHotel(Hotel hotel)
@@ -36,7 +34,6 @@ public class PlanMyTripService {
         hotel.setRooms(new LinkedList<>());
         return hotelRepository.save(hotel);
     }
-
     public Hotel saveRooms(List<Room> rooms, int hotelId)
     {
         Optional<Hotel> savedHotel = hotelRepository.findById(hotelId);
@@ -59,13 +56,11 @@ public class PlanMyTripService {
     {
         hotelRepository.deleteById(hotelId);
     }
-
     public Customer saveCustomer(Customer customer)
     {
         customer.setBookings(new ArrayList<>());
         return customerRepository.save(customer);
     }
-
 
 
     //2.Retrieve hotels based on Room Type, sharing, location and sort based on price [Hotels should not be retrieved if no vacancy]
@@ -104,7 +99,6 @@ public class PlanMyTripService {
             throw new HotelListNotFoundException("Hotel list not found with "+hotelGetRequest.getLocation()+" location");
         }
     }
-
 
 
     //    3.API for customer to book hotel rooms. [customer gets a coins 2% on original price after he successfully checked-in]
@@ -246,7 +240,7 @@ public class PlanMyTripService {
             roomRepository.save(room);
         });
 
-        return bookedRooms;
+        return rooms;
     }
 
 
@@ -323,4 +317,150 @@ public List<String> getHotelReport(int hotelId)
     }
 }
 
+//7. API to cancel the booking of customer
+
+    public String cancelBooking(int customerId, int bookingId) throws BookingListNotFoundException, BookingNotCancelledException {
+        Optional<Customer> customer = customerRepository.findById(customerId);
+
+        if (customer.isPresent())
+        {
+            Customer existingCustomer = customer.get();
+
+            List<Booking> bookings = existingCustomer.getBookings();
+
+            if (!bookings.isEmpty())
+            {
+                Booking existedBooking = bookings.stream()
+                        .filter(booking -> bookingId == booking.getBookingId())
+                        .findFirst()
+                        .orElse(null);
+
+                if (existedBooking != null)
+                {
+                    LocalDateTime now = LocalDateTime.now();
+                    long hours = ChronoUnit.HOURS.between(now, existedBooking.getCheckInDate().atStartOfDay());
+
+                    if (hours > 24) {
+
+
+//                        List<Booking> updatedCustomerBookings = bookings.stream()
+//                                .filter(booking -> booking.getBookingId() != bookingId)
+//                                .collect(Collectors.toList());
+//
+//                        existingCustomer.setBookings(updatedCustomerBookings);
+//
+//                  Room existedRoom = roomRepository.findById(existedBooking.getRooms().getRoomId()).get();
+//
+//                        List<Booking> existedRoomBookings = existedRoom.getBookings();
+//
+//                        List<Booking> updatedRoomBookings = existedRoomBookings.stream()
+//                                .filter(booking -> booking.getBookingId() != bookingId)
+//                                .collect(Collectors.toList());
+//
+//                        existedRoom.setBookings(updatedRoomBookings);
+//
+//                        Hotel existedHotel = hotelRepository.findById(existedRoom.getHotel().getHotelId()).get();
+//
+//                        List<Room> existedRooms = existedHotel.getRooms();
+//
+//                        List<Room> updatedRooms = existedRooms.stream().filter(room -> room.getRoomId() != existedBooking.getRooms().getRoomId()).collect(Collectors.toList());
+//
+//                        existedHotel.setRooms(updatedRooms);
+//
+//
+//                        bookingRepository.deleteById(bookingId);
+//                        hotelRepository.save(existedHotel);
+//                        customerRepository.save(existingCustomer);
+
+                        bookings.remove(existedBooking);
+                        customerRepository.save(existingCustomer);
+
+                        return "Your booking with booking Id " + bookingId + " has been cancelled successfully";
+                    }
+                    else
+                    {
+                        throw new BookingNotCancelledException("Booking cannot be cancelled within 24 hours of check-in");
+                    }
+
+                }
+                else
+                {
+                    throw new BookingNotFoundException("Booking not found in your booking list with bookingId " + bookingId);
+                }
+            }
+            else
+            {
+                throw new BookingListNotFoundException("Bookings not found for customerId " + customerId);
+            }
+        }
+        else
+        {
+            throw new CustomerNotFoundException("Customer not found with customerId " + customerId);
+        }
+    }
+
+
+
+    public Hotel getOneHotel(int hotelId)
+    {
+
+        Optional<Hotel> hotel = hotelRepository.findById(hotelId);
+
+        if (hotel.isPresent())
+        {
+            return hotel.get();
+        }
+        else
+        {
+            throw new HotelNotFoundException("Hotel not found with hotelId "+hotelId);
+        }
+    }
+
+    public Room getOneRoom(int roomId)
+    {
+        Optional<Room> room = roomRepository.findById(roomId);
+
+        if (room.isPresent())
+        {
+            return room.get();
+        }
+        else
+        {
+            throw new RoomNotFoundException("Room not found with roomId "+roomId);
+        }
+
+    }
+
+    public Booking getOneBooking(int bookingId)
+    {
+        Optional<Booking> booking = bookingRepository.findById(bookingId);
+
+        if (booking.isPresent())
+        {
+            return booking.get();
+        }
+        else
+        {
+            throw new BookingNotFoundException("Booking not found with bookingId "+bookingId);
+        }
+
+    }
+
+    public Customer getOneCustomer(int customerId)
+    {
+
+        Optional<Customer> customer = customerRepository.findById(customerId);
+
+        if (customer.isPresent())
+        {
+            return customer.get();
+        }
+        else
+        {
+            throw new CustomerNotFoundException("Customer not found with customerId "+customerId);
+        }
+
+    }
+
 }
+

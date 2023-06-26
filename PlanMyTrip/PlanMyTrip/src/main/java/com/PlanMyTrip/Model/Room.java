@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import javax.transaction.Transactional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
@@ -43,7 +44,7 @@ public class Room {
 
 
     @JsonManagedReference("roomReference")
-    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL,mappedBy = "rooms")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "rooms",orphanRemoval = true)
     private List<Booking> bookings;
 
 
@@ -53,7 +54,8 @@ public class Room {
     private Hotel hotel;
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "Room{" +
                 "roomId=" + roomId +
                 ", roomType='" + roomType + '\'' +
@@ -66,8 +68,3 @@ public class Room {
     }
 
 }
-
-//    Standard Room
-//    Deluxe Room
-//    Superior Room
-//    Executive Room

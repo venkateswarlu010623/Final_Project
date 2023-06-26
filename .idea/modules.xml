@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/EmployeeManagementSystem.main.iml" filepath="$PROJECT_DIR$/.idea/modules/EmployeeManagementSystem.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/INTELLIJ IDEA WORK SPACE.iml" filepath="$PROJECT_DIR$/.idea/INTELLIJ IDEA WORK SPACE.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/PlanMyTrip.main.iml" filepath="$PROJECT_DIR$/.idea/modules/PlanMyTrip.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/StudentAndStaffRecordManager.main.iml" filepath="$PROJECT_DIR$/.idea/modules/StudentAndStaffRecordManager.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/productManagementSystem.main.iml" filepath="$PROJECT_DIR$/.idea/modules/productManagementSystem.main.iml" />
     </modules>
   </component>
 </project>
