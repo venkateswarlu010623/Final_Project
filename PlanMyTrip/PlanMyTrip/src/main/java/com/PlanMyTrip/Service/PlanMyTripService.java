@@ -225,9 +225,9 @@ public class PlanMyTripService {
 
                 if (booking.getCheckInDate().isEqual(today))
                 {
-                    room.setStatus("Occupied upto "+booking.getCheckOutDate());
+                    room.setStatus("Occupied");
                 }
-                else if (booking.getCheckOutDate().isEqual(today))
+                else if (today.isAfter(booking.getCheckOutDate()))
                 {
                     room.setStatus("Available");
                 }
@@ -264,11 +264,19 @@ public class PlanMyTripService {
                                                                                   "ORIGINAL PRICE ="+ booking.getOriginalPrice()+" "+
                                                                                   "DISCOUNTED PRICE ="+ booking.getDiscountPrice())
                                                                   .collect(Collectors.toList());
-               return bookingDetailsList;
+
+               if (!bookingDetailsList.isEmpty())
+               {
+                   return bookingDetailsList;
+               }
+               else
+               {
+                   throw new BookingsNotFoundException(" Bookings not found in give "+date+" date");
+               }
            }
            else
            {
-               throw new BookingsNotFoundException(" Bookings not found ");
+               throw new BookingsNotFoundException(" Bookings not found for customerId "+customerId);
            }
        }
        else
@@ -341,36 +349,6 @@ public List<String> getHotelReport(int hotelId)
                     long hours = ChronoUnit.HOURS.between(now, existedBooking.getCheckInDate().atStartOfDay());
 
                     if (hours > 24) {
-
-
-//                        List<Booking> updatedCustomerBookings = bookings.stream()
-//                                .filter(booking -> booking.getBookingId() != bookingId)
-//                                .collect(Collectors.toList());
-//
-//                        existingCustomer.setBookings(updatedCustomerBookings);
-//
-//                  Room existedRoom = roomRepository.findById(existedBooking.getRooms().getRoomId()).get();
-//
-//                        List<Booking> existedRoomBookings = existedRoom.getBookings();
-//
-//                        List<Booking> updatedRoomBookings = existedRoomBookings.stream()
-//                                .filter(booking -> booking.getBookingId() != bookingId)
-//                                .collect(Collectors.toList());
-//
-//                        existedRoom.setBookings(updatedRoomBookings);
-//
-//                        Hotel existedHotel = hotelRepository.findById(existedRoom.getHotel().getHotelId()).get();
-//
-//                        List<Room> existedRooms = existedHotel.getRooms();
-//
-//                        List<Room> updatedRooms = existedRooms.stream().filter(room -> room.getRoomId() != existedBooking.getRooms().getRoomId()).collect(Collectors.toList());
-//
-//                        existedHotel.setRooms(updatedRooms);
-//
-//
-//                        bookingRepository.deleteById(bookingId);
-//                        hotelRepository.save(existedHotel);
-//                        customerRepository.save(existingCustomer);
 
                         bookings.remove(existedBooking);
                         customerRepository.save(existingCustomer);

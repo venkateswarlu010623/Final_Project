@@ -39,7 +39,7 @@ public class Room {
 
 
     @NotBlank(message = "room status is required ")
-    @Pattern(regexp = "^(UnReserved)",message = "Invalid room status")
+    @Pattern(regexp = "^(UnReserved|Reserved|Occupied|Available)",message = "Invalid room status")
     private String status;
 
 
