@@ -34,37 +34,22 @@ public class Room {
     private String sharing;
 
     @Positive(message = "Original price must be a positive value")
-    @Min(value = 1000,message = "price per day should minimum 1000")
+    @Min(value = 500,message = "price per day should minimum 1000")
     private double pricePerDay;
-
 
     @NotBlank(message = "room status is required ")
     @Pattern(regexp = "^(UnReserved|Reserved|Occupied|Available)",message = "Invalid room status")
-    private String status;
-
+    private String roomStatus;
 
     @JsonManagedReference("roomReference")
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "rooms",orphanRemoval = true)
     private List<Booking> bookings;
-
 
     @JsonBackReference("hotelReference")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "hotelId")
     private Hotel hotel;
 
-    @Override
-    public String toString()
-    {
-        return "Room{" +
-                "roomId=" + roomId +
-                ", roomType='" + roomType + '\'' +
-                ", sharing='" + sharing + '\'' +
-                ", pricePerDay=" + pricePerDay +
-                ", status='" + status + '\'' +
-                ", bookings=" + bookings +
-                ", hotel=" + hotel +
-                '}';
-    }
+
 
 }

@@ -40,6 +40,9 @@ public class Booking {
     @PastOrPresent(message = "Booking date must be in the past or present")
     private LocalDateTime bookingDate;
 
+    @NotBlank(message = "Booking status is required")
+    @Pattern(regexp = "^(Confirmed|Pending|Cancelled|Completed)", message = "Invalid booking status")
+    private String bookingStatus;
 
 
     @JsonBackReference("customerReference")

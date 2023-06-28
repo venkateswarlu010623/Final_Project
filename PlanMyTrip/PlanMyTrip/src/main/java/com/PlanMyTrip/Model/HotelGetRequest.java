@@ -20,7 +20,7 @@ public class HotelGetRequest {
     private String sharing;
 
     @NotBlank(message = "room status is required ")
-    @Pattern(regexp = "^(UnReserved|Reserved|Occupied)",message = "Invalid room status")
+    @Pattern(regexp = "^(UnReserved|Reserved|Occupied|Available)",message = "Invalid room status")
     private String roomStatus;
 
     @NotBlank(message = "Hotel location should not blank")

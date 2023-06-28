@@ -33,7 +33,6 @@ public class CustomerBookingRequest {
     @Pattern(regexp = "^(Single|Double|Three|Four)",message = "Invalid sharing")
     private String sharing;
 
-
     private Booking bookingDetails;
 
 }

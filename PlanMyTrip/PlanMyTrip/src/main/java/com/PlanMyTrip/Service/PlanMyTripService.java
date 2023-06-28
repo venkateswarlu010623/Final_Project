@@ -74,11 +74,12 @@ public class PlanMyTripService {
                     .filter(hotel ->!hotel.getRooms().isEmpty())
                     .map(hotel -> {
                         List<Room> savedRooms = hotel.getRooms().stream()
-                                .filter(room -> room.getSharing().equalsIgnoreCase(hotelGetRequest.getSharing()) &&
-                                                room.getRoomType().equalsIgnoreCase(hotelGetRequest.getRoomType()) &&
-                                                room.getStatus().equalsIgnoreCase(hotelGetRequest.getRoomStatus()))
+                                .filter(room -> (room.getSharing().equalsIgnoreCase(hotelGetRequest.getSharing()) &&
+                                                room.getRoomType().equalsIgnoreCase(hotelGetRequest.getRoomType())) &&
+                                                room.getRoomStatus().equalsIgnoreCase(hotelGetRequest.getRoomStatus()))
                                 .collect(Collectors.toList());
 
+                        System.out.println(hotelGetRequest.getRoomStatus());
                         if (!savedRooms.isEmpty())
                         {
                             List<Room> existingRooms = savedRooms.stream()
@@ -153,18 +154,18 @@ public class PlanMyTripService {
                        {
                            Booking booking = new Booking();
 
+                           LocalDateTime today = LocalDateTime.now();
+
                            booking.setCheckInDate(customerBookingRequest.getBookingDetails().getCheckInDate());
                            booking.setCheckOutDate(customerBookingRequest.getBookingDetails().getCheckOutDate());
                            booking.setOriginalPrice(originalPrice);
                            booking.setDiscountPrice(discountedPrice);
-                           booking.setBookingDate(LocalDateTime.now());
+                           booking.setBookingDate(today);
+                           booking.setBookingStatus(customerBookingRequest.getBookingDetails().getBookingStatus());
                            booking.setRooms(existingRoom);
                            booking.setCustomer(customer);
 
                            customer.getBookings().add(booking);
-
-                           double coinBalance = customer.getCoinsBalance();
-                           customer.setCoinsBalance((((double) 2 / 100) * originalPrice) + coinBalance);
                            customerRepository.save(customer);
                        }
 
@@ -207,14 +208,15 @@ public class PlanMyTripService {
     public List<Room> updateRoomStatus() {
         List<Room> rooms = roomRepository.findAll();
 
+        List<Customer> customers = customerRepository.findAll();
+
         rooms.forEach(room -> {
 
             if(room.getBookings().isEmpty())
             {
-                room.setStatus("UnReserved");
+                room.setRoomStatus("UnReserved");
             }
         });
-
         List<Room> bookedRooms = rooms.stream()
                 .filter(room -> !room.getBookings().isEmpty())
                 .collect(Collectors.toList());
@@ -225,20 +227,43 @@ public class PlanMyTripService {
 
                 if (booking.getCheckInDate().isEqual(today))
                 {
-                    room.setStatus("Occupied");
+                    room.setRoomStatus("Occupied");
                 }
                 else if (today.isAfter(booking.getCheckOutDate()))
                 {
-                    room.setStatus("Available");
+                    room.setRoomStatus("Available");
                 }
                 else
                 {
-                    room.setStatus("Reserved");
+                    room.setRoomStatus("Reserved");
                 }
             });
 
+
+
             roomRepository.save(room);
         });
+
+        List<Customer> bookedCustomer = customers.stream()
+                .filter(customer -> !customer.getBookings().isEmpty())
+                .collect(Collectors.toList());
+
+        bookedCustomer.forEach(customer -> {
+            customer.getBookings().forEach(booking -> {
+
+                if(booking.getCheckInDate().isEqual(LocalDate.now()))
+                {
+                    long days = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+
+                           double coinBalance = customer.getCoinsBalance();
+                           double originalPrice = booking.getRooms().getPricePerDay()*days;
+                           customer.setCoinsBalance((((double) 2 / 100) * originalPrice) + coinBalance);
+
+                    customerRepository.save(customer);
+                }
+            });
+        });
+
 
         return rooms;
     }
@@ -259,7 +284,7 @@ public class PlanMyTripService {
 
            if(!bookings.isEmpty())
            {
-               List<String> bookingDetailsList = bookings.stream().filter(booking ->booking.getBookingDate().isEqual(date.atStartOfDay()))
+               List<String> bookingDetailsList = bookings.stream().filter(booking ->booking.getBookingDate().toLocalDate().isEqual(date))
                                                                   .map(booking -> "BOOKING DATE ="+ booking.getBookingDate()+" "+
                                                                                   "ORIGINAL PRICE ="+ booking.getOriginalPrice()+" "+
                                                                                   "DISCOUNTED PRICE ="+ booking.getDiscountPrice())
