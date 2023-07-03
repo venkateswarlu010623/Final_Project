@@ -1,11 +1,9 @@
 package com.PlanMyTrip.Service;
 
+import com.PlanMyTrip.Entity.*;
 import com.PlanMyTrip.ExceptionHandling.*;
 import com.PlanMyTrip.Model.*;
-import com.PlanMyTrip.Repository.BookingRepository;
-import com.PlanMyTrip.Repository.CustomerRepository;
-import com.PlanMyTrip.Repository.HotelRepository;
-import com.PlanMyTrip.Repository.RoomRepository;
+import com.PlanMyTrip.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +24,20 @@ public class PlanMyTripService {
     RoomRepository roomRepository;
     @Autowired
     BookingRepository bookingRepository;
+    @Autowired
+    PayMentRepository payMentRepository;
+
+
 
 //1.Register a Hotels and customers
 
     public Hotel saveHotel(Hotel hotel)
     {
         hotel.setRooms(new LinkedList<>());
+        hotel.setBookings(new LinkedList<>());
         return hotelRepository.save(hotel);
     }
+
     public Hotel saveRooms(List<Room> rooms, int hotelId)
     {
         Optional<Hotel> savedHotel = hotelRepository.findById(hotelId);
@@ -56,11 +60,57 @@ public class PlanMyTripService {
     {
         hotelRepository.deleteById(hotelId);
     }
+
+
     public Customer saveCustomer(Customer customer)
     {
-        customer.setBookings(new ArrayList<>());
+        customer.setBookings(new LinkedList<>());
         return customerRepository.save(customer);
     }
+
+    public String customerLogin(CustomerLogin customerLogin) throws InvalidCredentialsException {
+        Customer customer = customerRepository.findByCustomerEmail(customerLogin.getCustomerEmail());
+
+        if (customer != null)
+        {
+            if (customer.getPassword().equals(customerLogin.getPassword()))
+            {
+                return "Customer login successful. Redirecting to the home page...";
+            }
+            else
+            {
+                throw new InvalidCredentialsException("Invalid password. Please try again.");
+            }
+        }
+        else
+        {
+            throw new CustomerNotFoundException("Customer account not found. Please register to continue.");
+        }
+    }
+
+
+
+    public String hotelManagementLogin(HotelManagementLogin hotelManagementLogin) {
+        Optional<Hotel> hotel = hotelRepository.findById(hotelManagementLogin.getHotelId());
+
+        if (hotel.isPresent()) {
+            Hotel existingHotel = hotel.get();
+
+            if (existingHotel.getHotelManagerPassword().equals(hotelManagementLogin.getPassword()))
+            {
+                return "Hotel management login successful. Redirect to the home page.";
+            }
+            else
+            {
+                throw new InvalidCredentialsException("Invalid password. Please check your login details.");
+            }
+        }
+        else
+        {
+            throw new HotelNotFoundException("Hotel not found. Please register your hotel.");
+        }
+    }
+
 
 
     //2.Retrieve hotels based on Room Type, sharing, location and sort based on price [Hotels should not be retrieved if no vacancy]
@@ -104,7 +154,7 @@ public class PlanMyTripService {
 
     //    3.API for customer to book hotel rooms. [customer gets a coins 2% on original price after he successfully checked-in]
 
-    public CustomerBookingRequest createCustomerBooking(CustomerBookingRequest customerBookingRequest) throws HotelNotFoundException, RoomNotFoundException, RoomNotAvailableException, CustomerNotFoundException {
+    public CustomerBookingRequest createCustomerBooking(CustomerBookingRequest customerBookingRequest) throws HotelNotFoundException, RoomNotFoundException, RoomNotAvailableException, CustomerNotFoundException, InterruptedException {
 
         Optional<Hotel> savedHotel = hotelRepository.findByLocationAndHotelName(customerBookingRequest.getLocation(),customerBookingRequest.getHotelName());
 
@@ -161,24 +211,64 @@ public class PlanMyTripService {
                            booking.setOriginalPrice(originalPrice);
                            booking.setDiscountPrice(discountedPrice);
                            booking.setBookingDate(today);
-                           booking.setBookingStatus(customerBookingRequest.getBookingDetails().getBookingStatus());
                            booking.setRooms(existingRoom);
                            booking.setCustomer(customer);
-
+                           booking.setHotel(existingRoom.getHotel());
+                           booking.setBookingStatus("Payment Initiated");
                            customer.getBookings().add(booking);
-                           customerRepository.save(customer);
+
+                           List<Booking> bookingList = customer.getBookings().stream()
+                                   .sorted(Comparator.comparing(Booking::getBookingDate).reversed())
+                                   .collect(Collectors.toList());
+
+                           customer.setBookings(bookingList);
+
+                       Customer updatecustomer =   customerRepository.save(customer);
+
+                           Thread paymentThread = new Thread(() -> {
+
+                               try {
+                                   Thread.sleep(30000);
+                               } catch (InterruptedException e) {
+                                   throw new PayMentThreadInterruptedException("Payment thread interrupted successfully after payment");
+                               }
+
+                               Optional<PayMent> payment = payMentRepository.findByBookingBookingId(updatecustomer.getBookings().get(0).getBookingId());
+
+                               PayMent customerPayMent = null;
+
+                               if (payment.isPresent())
+                               {
+                                   customerPayMent = payment.get();
+
+                                   if (customerPayMent.getPaymentStatus().equals("Paid"))
+                                   {
+                                       updatecustomer.getBookings().get(0).setBookingStatus("Confirmed");
+                                   }
+                                   else
+                                   {
+                                       updatecustomer.getBookings().get(0).setBookingStatus("Pending");
+                                   }
+                               }
+                               else
+                               {
+                                   updatecustomer.getBookings().get(0).setBookingStatus("Pending");
+                               }
+
+                               updatecustomer.getBookings().get(0).setPayment(customerPayMent);
+                               bookingRepository.save(updatecustomer.getBookings().get(0));
+                           });
+
+                           paymentThread.start();
+                           paymentThread.join();
+
                        }
 
-                       List<Booking> bookingList = customer.getBookings().stream()
-                               .sorted(Comparator.comparing(Booking::getBookingDate).reversed())
-                               .collect(Collectors.toList());
-
-                       customerBookingRequest.setBookingDetails(bookingList.get(0));
+                       customerBookingRequest.setBookingDetails(customer.getBookings().get(0));
                        customerBookingRequest.setCustomerName(customer.getCustomerName());
                        customerBookingRequest.setRoom_number(existingRoom.getRoomId());
 
                        return customerBookingRequest;
-
                    }
                    else
                    {
@@ -199,6 +289,73 @@ public class PlanMyTripService {
         {
             throw new HotelNotFoundException("Hotel not found with name "+customerBookingRequest.getHotelName()+" in location "+customerBookingRequest.getLocation());
         }
+    }
+
+
+        public PayMent  createPayMent(int customerId,PayMent customerPayMent)
+    {
+
+       Customer  customer = customerRepository.findById(customerId).get();
+
+
+        List<Booking> bookingList = customer.getBookings().stream()
+                .sorted(Comparator.comparing(Booking::getBookingDate).reversed())
+                .collect(Collectors.toList());
+
+        Booking currentBooking = bookingList.get(0);
+
+        LocalDate today = LocalDate.now();
+
+        currentBooking.setPayment(customerPayMent);
+
+        PayMent payMent = currentBooking.getPayment();
+
+        if(currentBooking.getOriginalPrice() == payMent.getAmount())
+        {
+            payMent.setPaymentStatus("Paid");
+        }
+        else
+        {
+            payMent.setPaymentStatus("Failed");
+        }
+        payMent.setPaymentDate(today);
+        payMent.setBooking(currentBooking);
+        return payMentRepository.save(payMent);
+    }
+
+
+    public PayMent  updatePayMent(int bookingId,PayMent customerPayMent)
+    {
+
+        Optional<Customer>  customer = customerRepository.findById(bookingId);
+        Booking booking = bookingRepository.findById(bookingId).get();
+        LocalDate today = LocalDate.now();
+
+        booking.setPayment(customerPayMent);
+
+        PayMent payMent = booking.getPayment();
+
+        if(booking.getOriginalPrice() == payMent.getAmount())
+        {
+            payMent.setPaymentStatus("Paid");
+        }
+        else
+        {
+            payMent.setPaymentStatus("Failed");
+        }
+
+
+        if (payMent.getPaymentStatus().equals("Paid"))
+        {
+            booking.setBookingStatus("Confirmed");
+        }
+        else
+        {
+            booking.setBookingStatus("Pending");
+        }
+        payMent.setPaymentDate(today);
+        payMent.setBooking(booking);
+        return payMentRepository.save(payMent);
     }
 
 
@@ -239,8 +396,6 @@ public class PlanMyTripService {
                 }
             });
 
-
-
             roomRepository.save(room);
         });
 
@@ -267,7 +422,6 @@ public class PlanMyTripService {
 
         return rooms;
     }
-
 
 
 //5.Retrieve bookings with original price and discount price of customer based on date
@@ -342,7 +496,6 @@ public List<String> getHotelReport(int hotelId)
        {
            throw new BookedRoomsNotFoundException("Booked rooms not found in "+existingHotel.getHotelName()+" hotel");
        }
-
     }
     else
     {
@@ -373,9 +526,10 @@ public List<String> getHotelReport(int hotelId)
                     LocalDateTime now = LocalDateTime.now();
                     long hours = ChronoUnit.HOURS.between(now, existedBooking.getCheckInDate().atStartOfDay());
 
-                    if (hours > 24) {
-
-                        bookings.remove(existedBooking);
+                    if (hours > 24)
+                    {
+//                        bookings.remove(existedBooking);
+                        existedBooking.setBookingStatus("Cancelled");
                         customerRepository.save(existingCustomer);
 
                         return "Your booking with booking Id " + bookingId + " has been cancelled successfully";
@@ -436,8 +590,8 @@ public List<String> getHotelReport(int hotelId)
 
     public Booking getOneBooking(int bookingId)
     {
-        Optional<Booking> booking = bookingRepository.findById(bookingId);
 
+        Optional<Booking> booking = bookingRepository.findById(bookingId);
         if (booking.isPresent())
         {
             return booking.get();
@@ -448,6 +602,7 @@ public List<String> getHotelReport(int hotelId)
         }
 
     }
+
 
     public Customer getOneCustomer(int customerId)
     {

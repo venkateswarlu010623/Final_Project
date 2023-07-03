@@ -1,13 +1,13 @@
-package com.PlanMyTrip.Model;
+package com.PlanMyTrip.Entity;
 
+import com.PlanMyTrip.Entity.Booking;
+import com.PlanMyTrip.Entity.Hotel;
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.transaction.Transactional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;

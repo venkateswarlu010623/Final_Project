@@ -1,11 +1,10 @@
 package com.PlanMyTrip.Model;
 
+import com.PlanMyTrip.Entity.Booking;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.*;
-import java.time.LocalDate;
 
 
 @NoArgsConstructor

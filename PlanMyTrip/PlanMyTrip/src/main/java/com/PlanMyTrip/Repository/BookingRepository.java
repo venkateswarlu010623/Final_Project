@@ -1,6 +1,6 @@
 package com.PlanMyTrip.Repository;
 
-import com.PlanMyTrip.Model.Booking;
+import com.PlanMyTrip.Entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

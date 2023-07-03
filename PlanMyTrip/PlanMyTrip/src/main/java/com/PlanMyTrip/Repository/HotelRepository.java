@@ -1,6 +1,6 @@
 package com.PlanMyTrip.Repository;
 
-import com.PlanMyTrip.Model.Hotel;
+import com.PlanMyTrip.Entity.Hotel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +17,7 @@ public interface HotelRepository extends JpaRepository<Hotel,Integer> {
     Optional<List<Hotel>> findByRoomsRoomTypeAndRoomsSharingAndLocation(String roomType, String sharing, String location);
 
     List<Hotel> findByLocation(String location);
+
+
+    Hotel findByHotelIdAndHotelManagerPassword(int hotelId, String password);
 }

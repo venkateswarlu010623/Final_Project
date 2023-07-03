@@ -22,6 +22,8 @@ public class PlanMyTripExceptionHandlingClass<map> {
         return errorMap;
     }
 
+
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(HotelNotFoundException.class)
     public Map<String,String> hotelNotFoundExceptionHandler(HotelNotFoundException exception)
@@ -108,6 +110,15 @@ public class PlanMyTripExceptionHandlingClass<map> {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(BookingNotCancelledException.class)
     public Map<String,String> bookingNotCancelledExceptionHandler(BookingNotCancelledException exception)
+    {
+        Map<String,String> errorMap = new TreeMap<>();
+        errorMap.put("error" ,exception.getMessage());
+        return errorMap;
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(PayMentThreadInterruptedException.class)
+    public Map<String,String> paymentThreadInterruptedExceptionHandler(PayMentThreadInterruptedException exception)
     {
         Map<String,String> errorMap = new TreeMap<>();
         errorMap.put("error" ,exception.getMessage());

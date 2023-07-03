@@ -1,11 +1,11 @@
-package com.PlanMyTrip.Model;
+package com.PlanMyTrip.Entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.transaction.Transactional;
 import javax.validation.constraints.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,7 +41,7 @@ public class Booking {
     private LocalDateTime bookingDate;
 
     @NotBlank(message = "Booking status is required")
-    @Pattern(regexp = "^(Confirmed|Pending|Cancelled|Completed)", message = "Invalid booking status")
+    @Pattern(regexp = "^(Confirmed|Pending|Cancelled|Completed|Payment Initiated)", message = "Invalid booking status")
     private String bookingStatus;
 
 
@@ -50,9 +50,21 @@ public class Booking {
     @JoinColumn(name = "customerId")
     private Customer customer;
 
+
     @JsonBackReference("roomReference")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "roomId")
     private Room rooms;
+
+
+    @JsonBackReference("hotelReference")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "hotelId")
+    private Hotel hotel;
+
+    @JsonBackReference("payMentReference")
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "payMentId")
+    public PayMent payment;
 
 }

@@ -1,8 +1,7 @@
 package com.PlanMyTrip.Controller;
 
 
-import com.PlanMyTrip.ExceptionHandling.BookingListNotFoundException;
-import com.PlanMyTrip.ExceptionHandling.BookingNotCancelledException;
+import com.PlanMyTrip.Entity.*;
 import com.PlanMyTrip.Model.*;
 import com.PlanMyTrip.Service.PlanMyTripService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +19,21 @@ public class PlanMyTripController {
     @Autowired
     PlanMyTripService planMyTripService;
 
+    private Thread paymentThread;
+
 
     @PostMapping("/hotels/register")
     public ResponseEntity<Hotel> createHotel(@Valid @RequestBody Hotel hotel)
     {
         Hotel savedHotel = planMyTripService.saveHotel(hotel);
+
+        return new ResponseEntity<>(savedHotel, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/hotel/login")
+    public ResponseEntity<String> hotelManagementLogin(@Valid @RequestBody HotelManagementLogin hotelManagementLogin)
+    {
+        String savedHotel = planMyTripService.hotelManagementLogin(hotelManagementLogin);
 
         return new ResponseEntity<>(savedHotel, HttpStatus.CREATED);
     }
@@ -57,6 +66,15 @@ public class PlanMyTripController {
     }
 
 
+    @GetMapping("/customer/login")
+    public ResponseEntity<String> customerLogin(@Valid @RequestBody CustomerLogin customerLogin)
+    {
+        String savedCustomer = planMyTripService.customerLogin(customerLogin);
+
+        return new ResponseEntity<>(savedCustomer, HttpStatus.CREATED);
+    }
+
+
     @PostMapping("/hotels")
     public ResponseEntity<List<Hotel>> getHotelsByRoomTypeAndSharingAndLocation( @Valid @RequestBody HotelGetRequest hotelGetRequest)
     {
@@ -68,11 +86,32 @@ public class PlanMyTripController {
 
 
     @PostMapping("/customer/booking")
-    public ResponseEntity<CustomerBookingRequest> addBooking(@Valid @RequestBody CustomerBookingRequest customerBookingRequest)
-    {
+    public ResponseEntity<CustomerBookingRequest> addBooking(@Valid @RequestBody CustomerBookingRequest customerBookingRequest) throws InterruptedException {
         CustomerBookingRequest updatedCustomer = planMyTripService.createCustomerBooking(customerBookingRequest);
-
         return new ResponseEntity<>(updatedCustomer, HttpStatus.ACCEPTED);
+    }
+
+
+
+    @PostMapping("/customer/payment/{customerId}")
+    public ResponseEntity<PayMent> addPayment( @RequestBody PayMent payMent,@PathVariable int customerId)
+    {
+        PayMent createdPayment = planMyTripService.createPayMent(customerId,payMent);
+
+        if (paymentThread != null && paymentThread.isAlive())
+        {
+            paymentThread.interrupt();
+        }
+
+        return new ResponseEntity<>(createdPayment, HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/customer/update/payment/{bookingId}")
+    public ResponseEntity<PayMent> updateCustomerPayment( @RequestBody PayMent payMent,@PathVariable int bookingId)
+    {
+        PayMent updatedPayment = planMyTripService.updatePayMent(bookingId,payMent);
+
+        return new ResponseEntity<>(updatedPayment, HttpStatus.ACCEPTED);
     }
 
 
@@ -105,7 +144,7 @@ public class PlanMyTripController {
 
 
     @PutMapping("/cancel/customer/booking/customerId-{customerId}/bookingId-{bookingId}")
-    public String removeCustomerBooking(@PathVariable int customerId,@PathVariable int bookingId)
+    public String cancelCustomerBooking(@PathVariable int customerId,@PathVariable int bookingId)
     {
         return planMyTripService.cancelBooking(customerId,bookingId);
     }
